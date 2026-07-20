@@ -1,0 +1,29 @@
+[Unit]
+Description=Edge Video Pipeline RK3588 RKNN
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__SERVICE_USER__
+WorkingDirectory=&lt;BOARD_USER_HOME&gt;/edge-inference-deploy-lab
+Environment=RUN_ID=%H_rk3588_8gb_yolo11n_rknn_service
+Environment=ENVIRONMENT_BASELINE_ID=20260611_rk3588_8gb_env_baseline
+Environment=INPUT_SOURCE_ID=video_set_stability_v1
+Environment=INPUT_SOURCE_TYPE=video_playlist
+Environment=INPUT_PATH=data/videos/stability_playlist_v1.txt
+Environment=INFERENCE_WORKERS=3
+Environment=TRACE_FAIL_ON_GAPS=0
+Environment=SAVE_OUTPUT_VIDEO=0
+Environment=DURATION_SEC=0
+Environment=PYTHON_BIN=&lt;BOARD_USER_HOME&gt;/venvs/rk3588_rknn/bin/python
+ExecStart=/usr/bin/bash projects/03_video_pipeline/scripts/run/run_rk3588_rknn_pipeline.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

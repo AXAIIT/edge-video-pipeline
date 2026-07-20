@@ -1,0 +1,92 @@
+board_config_id: rk3588_8gb_rknn_v1
+target: rk3588_8gb
+board_name: RK3588 8GB
+module: TOPEET RK3588
+source_baseline:
+  project1_environment_baseline: projects/01_vision_deploy/runs/20260607_rk3588_8gb_env_baseline.md
+  project2_environment_baseline: projects/02_quantization/runs/20260611_rk3588_8gb_env_baseline/run.md
+  active_environment_baseline_id: 20260611_rk3588_8gb_env_baseline
+  inheritance_policy: inherit_project2_rk3588_rknn_runtime_baseline
+  note: 项目三 RK3588 直接继承项目二 RKNN INT8 PTQ runtime 基线；项目三 run 只补 C++ pipeline、视频输入、runtime log、RKNPU monitor 和 raw schema/trace 证据。
+
+project3_delta_checks:
+  required_before_runtime_conclusion:
+    - rknn_model_hash_matches_project2_artifact
+    - cpp_rknn_build_succeeds
+    - fixed_video_input_opens
+    - rknpu_monitor_log_collected
+    - raw_schema_check_passes
+    - trace_check_generated
+  camera_required_for_first_runtime_benchmark: false
+  camera_required_for_realtime_source_validation: true
+
+runtime:
+  backend_runtime: rknn
+  execution_provider: RKNPU
+  loader_api: RKNN C API
+  rknn_toolkit_lite2_version: "1.6.0"
+  librknnrt_version: "1.6.0"
+  rknpu_driver_version: "0.9.8"
+  rknn_core_mask: 0_1_2
+  preprocess_pad_value: 0
+  preprocess_reference: projects/01_vision_deploy/src/rknn/yolo11_rknn_official.py
+  cpu_fallback_allowed: false
+  cpu_fallback_status_required: true
+  monitor_tool: rknpu sysfs load + dmesg tail
+  monitor_interval_ms: 1000
+  rknpu_load_paths:
+    - /sys/class/devfreq/fdab0000.npu/load
+    - /sys/kernel/debug/rknpu/load
+
+mainline_artifact:
+  model_name: yolo11n
+  precision_or_quantization: int8_ptq
+  backend_artifact_format: rknn
+  backend_artifact_path: models/yolo11n/rknn/yolo11n_640_rk3588_rknnopt_int8_ptq_calib500.rknn
+  backend_artifact_sha256: 40bce507d584498825267287cbb44c8dd860c8ddc3413677767891aeb225b69c
+  source_project: 02_quantization
+  source_run_id: 20260611_rk3588_8gb_yolo11n_rknnopt_int8_int8_ptq_calib500_benchmark
+  source_report_path: projects/02_quantization/reports/quantization_benchmark.md
+  source_raw_result_path: benchmark/raw/02_quantization/rk3588_8gb/20260611_rk3588_8gb_yolo11n_rknnopt_int8_int8_ptq_calib500_benchmark.jsonl
+  source_quality_status: project3_40bce_full_coco2017_recheck_pass_cpp_alignment_pending
+  source_report_sha256: ced0b0d4feea9b6df7326441323af5c99ad0a9e1af794434716ea581b1dc9de5
+  hash_recheck_required: false
+  hash_recheck_reason: 2026-06-18 用户选定板端与 PC 一致的 40bce artifact 作为项目三实时优化主线。
+  use_in_project3: mainline
+
+runtime_evidence:
+  required_runtime_log: logs/runtime/03_video_pipeline/rk3588_8gb/<run_id>.log
+  required_monitor_log: logs/monitor/03_video_pipeline/rk3588_8gb/<run_id>_rknpu.log
+  required_backend_fields:
+    - backend_runtime
+    - execution_provider
+    - loader_api
+    - backend_artifact_format
+    - backend_artifact_path
+    - backend_artifact_sha256
+    - runtime_evidence_path
+    - accelerator_evidence_path
+    - cpu_fallback
+    - fallback_reason
+
+quality_alignment:
+  baseline_artifact_path: models/yolo11n/rknn/yolo11n_640_rk3588_rknnopt_official_nonquant.rknn
+  baseline_reference: projects/01_vision_deploy/reports/accuracy_alignment_rk3588_rknnopt_official.md
+  project2_quality_reference: projects/02_quantization/reports/quantization_benchmark.md
+  fixed_input_alignment_required_when:
+    - backend_wrapper_changed
+    - preprocess_changed
+    - postprocess_changed
+    - nms_changed
+    - tensor_decode_changed
+    - rknn_artifact_changed
+  task_level_quality_required_when:
+    - rknn_artifact_changed
+    - preprocess_or_postprocess_changed
+    - output_parser_changed
+  queue_or_service_only_change_can_use_exemption: true
+
+notes:
+  - 项目三不能直接复用项目二单模型 FPS 作为 C++ video pipeline FPS。
+  - RK3588 性能结论必须来自 benchmark/raw/03_video_pipeline/rk3588_8gb/ 的 frame-level raw result。
+  - RKNN C++ wrapper 已接入 RKNN C API 和 YOLO11 official split-head DFL 解码；正式质量结论仍必须通过 fixed-input alignment 或 BDD100K no-drop 质量 run 后才能写 pass。

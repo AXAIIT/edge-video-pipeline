@@ -1,0 +1,176 @@
+stream_config_id: video_fixed_v1
+schema_version: 1
+path_root: repo_root
+description: 项目三固定视频和实时输入源 manifest。执行前必须补齐实际文件、设备或 RTSP 信息。
+
+input_sources:
+  - input_source_id: video_short_001
+    input_source_type: video_file
+    uri: data/videos/video_fixed_v1/video_short_001.avi
+    video_sha256: 45cddc9490be69345cbdab64ca583be65987e864ca408038e648db99e10516cf
+    codec: div3
+    width: 768
+    height: 576
+    fps: 10.0
+    duration_sec: 79.5
+    frame_count: 795
+    bitrate: 818285
+    loop_mode: false
+    timestamp_source: file_pts
+    availability: deprecated_historical_only
+    source_url: https://raw.githubusercontent.com/opencv/opencv/4.x/samples/data/vtest.avi
+    source_note: OpenCV sample vtest.avi; unlabeled historical diagnostic asset only. Formal and new runs use bdd100k_mot_mini_v1.
+    alignment_manifest: data/validation/video_fixed_v1_alignment/alignment_frames_manifest.json
+    alignment_scope: fixed_input_detection_alignment
+    labeled_quality_dataset: false
+  - input_source_id: video_long_loop_001
+    input_source_type: video_file
+    uri: data/videos/video_fixed_v1/video_short_001.avi
+    video_sha256: 45cddc9490be69345cbdab64ca583be65987e864ca408038e648db99e10516cf
+    codec: div3
+    width: 768
+    height: 576
+    fps: 10.0
+    duration_sec: 79.5
+    frame_count: 795
+    bitrate: 818285
+    loop_mode: true
+    timestamp_source: file_pts
+    availability: deprecated_historical_only
+    source_url: https://raw.githubusercontent.com/opencv/opencv/4.x/samples/data/vtest.avi
+    source_note: Same unlabeled historical asset as video_short_001; retained only for existing evidence traceability. Formal and new runs use bdd100k_mot_mini_v1.
+  - input_source_id: video_set_runtime_v1
+    input_source_type: video_playlist
+    uri: data/videos/runtime_playlist_v1.txt
+    video_sha256: null
+    codec: mixed_bdd100k_mov
+    width: 1280
+    height: 720
+    fps: 30.0
+    duration_sec: mixed_playlist_loop
+    frame_count: null
+    bitrate: mixed
+    loop_mode: true
+    timestamp_source: file_pts
+    availability: ready
+    source_note: Runtime playlist built from a fixed 20-clip BDD100K MOT mini subset; used for reproducible 600s mainline runtime runs after replacing single-file loop semantics.
+  - input_source_id: video_set_stability_v1
+    input_source_type: video_playlist
+    uri: data/videos/stability_playlist_v1.txt
+    video_sha256: null
+    codec: mixed_bdd100k_mov
+    width: 1280
+    height: 720
+    fps: 30.0
+    duration_sec: mixed_playlist_loop
+    frame_count: 80
+    bitrate: mixed
+    loop_mode: true
+    timestamp_source: file_pts
+    availability: ready
+    source_note: Stability playlist built from the full 80-clip BDD100K MOT mini prepared set; used for paced sustained realtime-like runs and preferred over looping a single short file.
+  - input_source_id: imx219_csi_001
+    input_source_type: mipi_camera
+    uri: /dev/video0
+    video_sha256: null
+    codec: RG10_raw_bayer
+    width: 1920
+    height: 1080
+    fps: 30.0
+    duration_sec: live_stream
+    frame_count: null
+    bitrate: null
+    loop_mode: false
+    timestamp_source: wall_clock
+    availability: ready_for_board_run
+    source_note: Jetson CSI IMX219 live source via V4L2 RG10 raw capture, percentile normalize, RGGB debayer, and gray-world white balance.
+    sensor_mode: 2
+    bayer_pattern: RG
+  - input_source_id: imx219_rdkx5_hbn_001
+    input_source_type: mipi_camera_hbn
+    uri: srcampy://video_idx0
+    video_sha256: null
+    codec: srcampy_nv12
+    width: 640
+    height: 640
+    fps: 30.0
+    duration_sec: live_stream
+    frame_count: null
+    bitrate: null
+    loop_mode: false
+    timestamp_source: wall_clock
+    availability: ready_for_board_run
+    source_note: RDK X5 IMX219 live source via HBN/srcampy. Board-side camera probe has verified HBN/VIN/SIF/ISP/VSE frame streaming while `/dev/video*` remains absent; project3 consumes the stream through a local srcampy helper into the shared C++ pipeline.
+    sensor_bus: i2c6
+    sensor_addr: 0x10
+  - input_source_id: imx219_csi_argus_001
+    input_source_type: mipi_camera_argus
+    uri: jetson_argus_default
+    video_sha256: null
+    codec: nvargus_nv12_to_bgr
+    width: 1280
+    height: 720
+    fps: 30.0
+    duration_sec: live_stream
+    frame_count: null
+    bitrate: null
+    loop_mode: false
+    timestamp_source: wall_clock
+    availability: probe_failed_current_board
+    source_note: Jetson CSI IMX219 live source via nvarguscamerasrc and Jetson ISP; intended to offload raw Bayer normalize/debayer from CPU for FPS optimization experiments, but the first on-board probes hit gstnvarguscamerasrc Failed to create FrameConsumer and produced no frames.
+    argus_sensor_id: 0
+    argus_flip_method: 0
+  - input_source_id: rtsp_stream_001
+    input_source_type: rtsp
+    uri:
+    video_sha256: null
+    codec:
+    width:
+    height:
+    fps:
+    duration_sec: null
+    frame_count: null
+    bitrate:
+    loop_mode: false
+    timestamp_source: wall_clock
+    availability: pending
+  - input_source_id: astra_s_openni_001
+    input_source_type: openni_camera
+    uri: 2bc5/0402
+    video_sha256: null
+    codec: openni_rgb888
+    width: 640
+    height: 480
+    fps: 30.0
+    duration_sec: live_stream
+    frame_count: null
+    bitrate: null
+    loop_mode: false
+    timestamp_source: wall_clock
+    availability: ready_for_board_run_after_udev_rule
+    source_note: RK3588 Astra S live source via OpenNI2/liborbbec. Board probe on 2026-06-21 confirmed readable color/depth/ir streams, with color defaulting to 640x480 RGB888 at 30 FPS. Requires udev rule for USB device 2bc5:0402 so non-root pipeline and systemd runs can open the camera.
+  - input_source_id: usb_camera_001
+    input_source_type: usb_camera
+    uri: /dev/video0
+    video_sha256: null
+    codec:
+    width:
+    height:
+    fps:
+    duration_sec: live_stream
+    frame_count: null
+    bitrate:
+    loop_mode: false
+    timestamp_source: wall_clock
+    availability: candidate_requires_rk3588_board_probe
+    source_note: RK3588 USB/UVC camera candidate. /dev/video0 is only the default; formal run must record the device node and v4l2-ctl format probe actually used.
+
+datasets:
+  - dataset_id: bdd100k_mot_mini_v1
+    role: labeled_video_quality
+    status: ready
+    config: projects/03_video_pipeline/configs/streams/bdd100k_mot_mini_v1.yaml
+    source: Kaggle BDD100K tracking subset
+    source_url: http://kaggle.com/datasets/robikscube/driving-video-with-object-tracking?resource=download
+    storage_budget_gb: 5
+    formal_quality_dataset: true

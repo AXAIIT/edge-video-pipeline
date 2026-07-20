@@ -1,0 +1,117 @@
+model_config_id: yolo11n_video_pipeline_conf010_v1
+model_name: yolo11n
+task: detection
+num_classes: 80
+input:
+  width: 640
+  height: 640
+  batch: 1
+  color_format: RGB
+  layout: NCHW
+  dtype: fp32
+  normalize:
+    scale: 0.00392156862745098
+    mean: [0.0, 0.0, 0.0]
+    std: [1.0, 1.0, 1.0]
+  resize:
+    type: letterbox
+    keep_ratio: true
+    pad_value: 114
+output:
+  tensor_name: output0
+  tensor_shape: [1, 84, 8400]
+  decode_type: yolo11_anchor_free
+postprocess:
+  confidence_threshold: 0.10
+  nms_iou_threshold: 0.45
+  max_detections: 300
+  class_agnostic_nms: false
+quality:
+  baseline_report: projects/01_vision_deploy/reports/accuracy_alignment.md
+  fixed_input_min_samples: 10
+  required_checks:
+    - bbox_in_image_range
+    - class_id_in_range
+    - empty_scene_outputs_empty_result
+    - frame_id_matches_output
+classes:
+  - person
+  - bicycle
+  - car
+  - motorcycle
+  - airplane
+  - bus
+  - train
+  - truck
+  - boat
+  - traffic light
+  - fire hydrant
+  - stop sign
+  - parking meter
+  - bench
+  - bird
+  - cat
+  - dog
+  - horse
+  - sheep
+  - cow
+  - elephant
+  - bear
+  - zebra
+  - giraffe
+  - backpack
+  - umbrella
+  - handbag
+  - tie
+  - suitcase
+  - frisbee
+  - skis
+  - snowboard
+  - sports ball
+  - kite
+  - baseball bat
+  - baseball glove
+  - skateboard
+  - surfboard
+  - tennis racket
+  - bottle
+  - wine glass
+  - cup
+  - fork
+  - knife
+  - spoon
+  - bowl
+  - banana
+  - apple
+  - sandwich
+  - orange
+  - broccoli
+  - carrot
+  - hot dog
+  - pizza
+  - donut
+  - cake
+  - chair
+  - couch
+  - potted plant
+  - bed
+  - dining table
+  - toilet
+  - tv
+  - laptop
+  - mouse
+  - remote
+  - keyboard
+  - cell phone
+  - microwave
+  - oven
+  - toaster
+  - sink
+  - refrigerator
+  - book
+  - clock
+  - vase
+  - scissors
+  - teddy bear
+  - hair drier
+  - toothbrush

@@ -1,0 +1,72 @@
+# Build artifacts
+build/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.so
+*.dylib
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large media (keep small test images under 100KB)
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.webm
+*.jpg
+*.png
+*.jpeg
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+*.rknn
+*.hbm
+*.bin
+
+# Logs
+*.log
+logs/
+
+# Data directories
+data/
+runs/
+*.csv
+
+# Exceptions for config CSVs
+!configs/**/*.csv
+!**/config*.csv
+
+# Secrets / environment
+.env
+*.env
+credentials.*
+secret.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp

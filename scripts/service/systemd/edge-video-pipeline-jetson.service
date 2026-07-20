@@ -1,0 +1,24 @@
+[Unit]
+Description=Edge Video Pipeline Jetson TensorRT
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=&lt;BOARD_USER_HOME&gt;/edge-inference-deploy-lab
+Environment=RUN_ID=%H_jetson_8gb_yolo11n_tensorrt_service
+Environment=INPUT_SOURCE_ID=video_set_stability_v1
+Environment=INPUT_SOURCE_TYPE=video_playlist
+Environment=INPUT_PATH=data/videos/stability_playlist_v1.txt
+Environment=SAVE_OUTPUT_VIDEO=0
+Environment=DURATION_SEC=0
+ExecStart=/usr/bin/bash projects/03_video_pipeline/scripts/run/run_jetson_tensorrt_pipeline.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

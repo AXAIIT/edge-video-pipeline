@@ -1,0 +1,21 @@
+cd /edge-inference-deploy-lab
+export ENVIRONMENT_BASELINE_ID=20260612_rdk_x5_8gb_env_baseline
+
+RUN_ID=$(date +%Y%m%d)_rdk_x5_8gb_yolo11n_bpu_imx219_hbn_preview_smoke \
+INPUT_SOURCE_ID=imx219_rdkx5_hbn_001 \
+INPUT_SOURCE_TYPE=mipi_camera_hbn \
+INPUT_PATH=srcampy://video_idx0 \
+PREVIEW_WINDOW=auto \
+INPUT_ORIENTATION_CORRECTION=rotate180 \
+INFERENCE_WORKERS=2 \
+POSTPROCESS_WORKERS=2 \
+SRCAMPY_VIDEO_IDX=0 \
+SRCAMPY_WIDTH=640 \
+SRCAMPY_HEIGHT=640 \
+SRCAMPY_SENSOR_WIDTH=1920 \
+SRCAMPY_SENSOR_HEIGHT=1080 \
+SRCAMPY_FPS=30 \
+SRCAMPY_WARMUP=10 \
+DURATION_SEC=60 \
+SAVE_OUTPUT_VIDEO=0 \
+  bash projects/03_video_pipeline/scripts/run/run_rdk_x5_bpu_pipeline.sh

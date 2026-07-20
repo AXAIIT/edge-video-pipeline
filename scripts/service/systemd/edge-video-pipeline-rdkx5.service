@@ -1,0 +1,27 @@
+[Unit]
+Description=Edge Video Pipeline RDK X5 BPU
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__SERVICE_USER__
+WorkingDirectory=__WORKDIR__
+Environment=RUN_ID=%H_rdk_x5_8gb_yolo11n_bpu_service
+Environment=ENVIRONMENT_BASELINE_ID=__ENV_BASELINE__
+Environment=INPUT_SOURCE_ID=video_set_stability_v1
+Environment=INPUT_SOURCE_TYPE=video_playlist
+Environment=INPUT_PATH=data/videos/stability_playlist_v1.txt
+Environment=TRACE_FAIL_ON_GAPS=0
+Environment=SAVE_OUTPUT_VIDEO=0
+Environment=DURATION_SEC=0
+ExecStart=/usr/bin/bash __RUN_SCRIPT__
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

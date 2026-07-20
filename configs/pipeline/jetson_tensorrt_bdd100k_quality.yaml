@@ -1,0 +1,61 @@
+pipeline_config_id: jetson_tensorrt_bdd100k_quality_v1
+target: jetson_8gb
+backend_runtime: tensorrt
+pipeline_mode: backend_pipeline
+status: ready_for_board_run
+purpose: labeled_video_quality_no_drop
+
+input:
+  stream_config: projects/03_video_pipeline/configs/streams/bdd100k_mot_mini_v1.yaml
+  default_input_source_id: bdd100k_mot_mini_v1
+  pace_video_file: true
+
+model:
+  model_config: projects/03_video_pipeline/configs/models/yolo11n.yaml
+  board_config: projects/03_video_pipeline/configs/boards/jetson_8gb.yaml
+  backend_artifact_path: models/yolo11n/tensorrt/yolo11n_640_jetson_trt_int8_ptq_calib500_minmax_b8.engine
+  backend_artifact_sha256: 1e966f10db6742476414294f931948b4732a4a44c07479022eca34869ab5ca9d
+  precision_or_quantization: int8_ptq
+
+threads:
+  mode: multithread
+  stages:
+    - capture
+    - preprocess
+    - inference
+    - postprocess
+    - output
+  capture_threads: 1
+  preprocess_threads: 1
+  inference_threads: 1
+  postprocess_threads: 1
+  output_threads: 1
+
+queues:
+  mainline_policy: block
+  queue_capacity: 32
+  quality_policy: no_drop
+  note: BDD100K labeled-video quality evaluation must preserve frame_id continuity; real-time drop policies are measured separately.
+
+buffers:
+  reuse: true
+  pool_size: 32
+
+output:
+  display: false
+  save_video: false
+  save_json: true
+  render_boxes: false
+
+benchmark:
+  duration_sec: 0
+  loop_video_file: false
+
+quality_alignment:
+  scope: labeled_frames_only
+  frame_alignment: label frame_id equals source video frame_id; raw must contain continuous frame_id values from the decoded video.
+  pass_requires:
+    - drop_frame_count_max == 0
+    - frame_id_gaps == 0
+    - schema_check_pass
+    - trace_check_pass

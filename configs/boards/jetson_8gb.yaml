@@ -1,0 +1,82 @@
+board_config_id: jetson_8gb_tensorrt_v1
+target: jetson_8gb
+board_name: Jetson Xavier NX 8GB
+module: Jetson Xavier NX 8GB
+source_baseline:
+  project1_environment_baseline: projects/01_vision_deploy/runs/20260604_jetson_8gb_env_baseline.md
+  project2_environment_baseline: projects/02_quantization/runs/20260609_jetson_8gb_env_baseline/run.md
+  active_environment_baseline_id: 20260609_jetson_8gb_env_baseline
+  inheritance_policy: inherit_project2_runtime_baseline_for_jetson_tensorrt
+  note: 项目三 Jetson TensorRT 阶段继承项目二基线；项目二基线已继承项目一 Jetson TensorRT/CUDA/OpenCV/tegrastats 环境。项目三不重复采集完整系统基线，但必须在每次 run 中记录该 baseline id，并补充视频输入、C++ 构建、runtime log 和 monitor log 证据。
+
+project3_delta_checks:
+  required_before_runtime_conclusion:
+    - int8_engine_hash_matches
+    - cpp_tensorrt_build_succeeds
+    - fixed_video_input_opens
+    - tegrastats_log_collected
+    - raw_schema_check_passes
+    - trace_check_passes
+  camera_required_for_first_runtime_benchmark: false
+  camera_required_for_realtime_source_validation: true
+
+runtime:
+  backend_runtime: tensorrt
+  execution_provider: TensorRT-GPU
+  loader_api: TensorRT C++ API
+  cuda_required: true
+  dla_enabled: false
+  cpu_fallback_allowed: false
+  cpu_fallback_status_required: true
+  monitor_tool: tegrastats
+  monitor_interval_ms: 1000
+
+mainline_artifact:
+  model_name: yolo11n
+  precision_or_quantization: int8_ptq
+  backend_artifact_format: engine
+  backend_artifact_path: models/yolo11n/tensorrt/yolo11n_640_jetson_trt_int8_ptq_calib500_minmax_b8.engine
+  backend_artifact_sha256: 1e966f10db6742476414294f931948b4732a4a44c07479022eca34869ab5ca9d
+  source_project: 02_quantization
+  source_run_id: 20260611_jetson_8gb_yolo11n_tensorrt_int8_int8_ptq_calib500_minmax_b8_benchmark
+  source_report_path: projects/02_quantization/reports/ptq_report.md
+  source_raw_result_path: benchmark/raw/02_quantization/jetson_8gb/20260611_jetson_8gb_yolo11n_tensorrt_int8_int8_ptq_calib500_minmax_b8_benchmark.jsonl
+  source_quality_status: pass
+  use_in_project3: mainline
+
+optional_artifacts: []
+
+runtime_evidence:
+  required_runtime_log: logs/runtime/03_video_pipeline/jetson_8gb/<run_id>.log
+  required_monitor_log: logs/monitor/03_video_pipeline/jetson_8gb/<run_id>_tegrastats.log
+  required_backend_fields:
+    - backend_runtime
+    - execution_provider
+    - loader_api
+    - backend_artifact_format
+    - backend_artifact_path
+    - backend_artifact_sha256
+    - runtime_evidence_path
+    - accelerator_evidence_path
+    - cpu_fallback
+    - fallback_reason
+
+quality_alignment:
+  baseline_artifact_path: models/yolo11n/onnx/yolo11n_640_static_opset12.onnx
+  baseline_reference: projects/01_vision_deploy/reports/accuracy_alignment.md
+  fixed_input_alignment_required_when:
+    - backend_wrapper_changed
+    - preprocess_changed
+    - postprocess_changed
+    - nms_changed
+    - tensor_decode_changed
+    - engine_changed
+  task_level_quality_required_when:
+    - engine_changed
+    - preprocess_or_postprocess_changed
+    - output_parser_changed
+  queue_or_service_only_change_can_use_exemption: true
+
+notes:
+  - 项目三不能直接复用项目一/二 FPS 作为 pipeline FPS。
+  - 项目三所有 Jetson 性能结论必须来自 benchmark/raw/03_video_pipeline/jetson_8gb/ 的 frame-level raw result。

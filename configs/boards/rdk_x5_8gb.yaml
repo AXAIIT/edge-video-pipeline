@@ -1,0 +1,88 @@
+board_config_id: rdk_x5_8gb_bpu_v1
+target: rdk_x5_8gb
+board_name: RDK X5 8GB
+module: RDK X5
+source_baseline:
+  project2_environment_baseline: projects/02_quantization/runs/20260612_rdk_x5_8gb_env_baseline/run.md
+  active_environment_baseline_id: 20260612_rdk_x5_8gb_env_baseline
+  inheritance_policy: inherit_project2_rdk_x5_bpu_runtime_baseline
+  note: 项目三 RDK X5 直接继承项目二 RDK X5 环境基线。项目三 run 必须补齐 C++ build、视频输入、runtime log、BPU monitor 和 raw schema/trace 证据。
+
+project3_delta_checks:
+  required_before_runtime_conclusion:
+    - split_head_bin_hash_matches_project2_artifact
+    - cpp_bpu_build_succeeds
+    - fixed_video_input_opens
+    - bpu_monitor_log_collected
+    - raw_schema_check_passes
+    - trace_check_generated
+  camera_required_for_first_runtime_benchmark: false
+  camera_required_for_realtime_source_validation: true
+
+runtime:
+  backend_runtime: bpu
+  execution_provider: BPU
+  loader_api: Horizon hbDNN C API
+  input_contract: NV12_bytes
+  postprocess_route: split_head_external_dfl_nms
+  preprocess_reference: projects/02_quantization/scripts/benchmark/07_run_rdkx5_split_head_python_runtime_predictions.py
+  cpu_fallback_allowed: false
+  cpu_fallback_status_required: true
+  monitor_tool: x5 devfreq + thermal + process memory + optional hrut_somstatus
+  monitor_interval_ms: 1000
+  bpu_devfreq_paths:
+    - /sys/class/devfreq/*bpu*/cur_freq
+    - /sys/class/devfreq/bpu/cur_freq
+  ddr_devfreq_paths:
+    - /sys/class/devfreq/*ddr*/cur_freq
+  gpu_devfreq_paths:
+    - /sys/class/devfreq/*gc8000*/cur_freq
+
+mainline_artifact:
+  model_name: yolo11n
+  precision_or_quantization: int8_ptq
+  backend_artifact_format: bin
+  backend_artifact_path: models/yolo11n/rdk_x5_bpu_split_head/yolo11n_640_rdkx5_split_head_int8_ptq_calib500.bin
+  backend_artifact_sha256: 2a90fb0783742b8f663458dd9a043b34ff046a98753ec7ee87275b8faa6b411c
+  source_project: 02_quantization
+  source_run_id: 20260615_rdk_x5_yolo11n_split_head_int8_python_runtime_letterbox_full_val2017_resource_monitor
+  source_report_path: projects/02_quantization/reports/ptq_report.md
+  source_raw_result_path: benchmark/raw/02_quantization/rdk_x5_8gb/20260615_rdk_x5_yolo11n_split_head_int8_python_runtime_letterbox_full_val2017_resource_monitor.jsonl
+  source_quality_status: pass_with_resource_note
+  use_in_project3: mainline
+
+runtime_evidence:
+  required_runtime_log: logs/runtime/03_video_pipeline/rdk_x5_8gb/<run_id>.log
+  required_monitor_log: logs/monitor/03_video_pipeline/rdk_x5_8gb/<run_id>_bpu.log
+  required_backend_fields:
+    - backend_runtime
+    - execution_provider
+    - loader_api
+    - backend_artifact_format
+    - backend_artifact_path
+    - backend_artifact_sha256
+    - runtime_evidence_path
+    - accelerator_evidence_path
+    - cpu_fallback
+    - fallback_reason
+
+quality_alignment:
+  baseline_artifact_path: models/yolo11n/rdk_x5_bpu_split_head/yolo11n_640_rdkx5_split_head_int8_ptq_calib500.bin
+  baseline_reference: projects/02_quantization/reports/ptq_report.md
+  fixed_input_alignment_required_when:
+    - backend_wrapper_changed
+    - preprocess_changed
+    - postprocess_changed
+    - nms_changed
+    - tensor_decode_changed
+    - bpu_artifact_changed
+  task_level_quality_required_when:
+    - bpu_artifact_changed
+    - preprocess_or_postprocess_changed
+    - output_parser_changed
+  queue_or_service_only_change_can_use_exemption: true
+
+notes:
+  - 项目三不能直接复用项目二 Python runtime FPS 作为 C++ video pipeline FPS。
+  - 项目三 RDK X5 正式性能结论必须来自 benchmark/raw/03_video_pipeline/rdk_x5_8gb/ 的 frame-level raw result。
+  - 当前主线 artifact 为 split-head .bin，输入契约为 NV12 bytes，后处理为 external DFL + class-aware NMS。

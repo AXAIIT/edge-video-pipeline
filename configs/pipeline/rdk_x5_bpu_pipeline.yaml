@@ -1,0 +1,126 @@
+pipeline_config_id: rdk_x5_bpu_pipeline_v1
+target: rdk_x5_8gb
+backend_runtime: bpu
+pipeline_mode: backend_pipeline
+status: ready_for_board_run
+
+input:
+  stream_config: projects/03_video_pipeline/configs/streams/video_fixed_v1.yaml
+  default_input_source_id: video_set_runtime_v1
+  fallback_input_source_id: video_set_stability_v1
+  pace_video_file: true
+  realtime_sources:
+    - imx219_rdkx5_hbn_001
+    - rtsp_stream_001
+
+model:
+  model_config: projects/03_video_pipeline/configs/models/yolo11n.yaml
+  board_config: projects/03_video_pipeline/configs/boards/rdk_x5_8gb.yaml
+  backend_artifact_path: models/yolo11n/rdk_x5_bpu_split_head/yolo11n_640_rdkx5_split_head_int8_ptq_calib500.bin
+  backend_artifact_sha256: 2a90fb0783742b8f663458dd9a043b34ff046a98753ec7ee87275b8faa6b411c
+  precision_or_quantization: int8_ptq
+
+threads:
+  mode: multithread
+  stages:
+    - capture
+    - preprocess
+    - inference
+    - postprocess
+    - output
+  capture_threads: 1
+  preprocess_threads: 1
+  inference_threads: 2
+  postprocess_threads: 2
+  output_threads: 1
+  thread_affinity: not_pinned
+
+queues:
+  capture_to_preprocess:
+    capacity: 8
+    full_policy: drop_oldest
+  preprocess_to_infer:
+    capacity: 8
+    full_policy: block_with_timeout
+    timeout_ms: 20
+  infer_to_postprocess:
+    capacity: 8
+    full_policy: block_with_timeout
+    timeout_ms: 20
+  postprocess_to_output:
+    capacity: 8
+    full_policy: drop_oldest
+  mainline_policy: drop_oldest
+  queue_capacity: 8
+  queue_push_timeout_ms: 20
+
+buffers:
+  reuse: true
+  pool_size: 8
+  bpu_input_buffer_reuse: true
+  bpu_output_buffer_reuse: true
+
+compatibility:
+  current_app_consumes:
+    queue_policy: mainline_policy
+    queue_capacity: queue_capacity
+    queue_push_timeout_ms: queue_push_timeout_ms
+    inference_workers: inference_threads
+    postprocess_workers: postprocess_threads
+    buffer_reuse: reuse
+  documentary_only_until_app_extends_schema:
+    - capture_to_preprocess.full_policy
+    - preprocess_to_infer.full_policy
+    - infer_to_postprocess.full_policy
+    - postprocess_to_output.full_policy
+    - pool_size
+    - bpu_input_buffer_reuse
+    - bpu_output_buffer_reuse
+  note: 当前 app 已消费全局 queue policy / capacity / timeout、`inference_threads`、`postprocess_threads` 与 `reuse`；per-stage queue 策略字段仍用于记录目标设计和后续扩展，不应误写为已独立生效。
+
+output:
+  display: false
+  save_video: false
+  save_json: true
+  render_boxes: true
+  output_sample_dir: projects/03_video_pipeline/runs/<run_id>/outputs
+
+logging:
+  raw_schema: benchmark/schemas/video_pipeline_raw_schema.yaml
+  raw_result_path: benchmark/raw/03_video_pipeline/rdk_x5_8gb/<run_id>.jsonl
+  runtime_log_path: logs/runtime/03_video_pipeline/rdk_x5_8gb/<run_id>.log
+  monitor_log_path: logs/monitor/03_video_pipeline/rdk_x5_8gb/<run_id>_bpu.log
+  failure_log_path: logs/failures/03_video_pipeline/rdk_x5_8gb/<run_id>.jsonl
+  per_frame_trace: true
+  runtime_evidence_required: true
+  accelerator_evidence_required: true
+
+benchmark:
+  warmup_frames: 30
+  smoke_duration_sec: 600
+  short_sustained_duration_sec: 1800
+  acceptance_sustained_duration_sec: 7200
+  batch: 1
+  concurrency: 1
+
+quality_alignment:
+  fixed_input_alignment_status: pending
+  task_level_quality_status: pending
+  quality_alignment_exemption_allowed_for_queue_only_change: true
+
+status_rules:
+  pass_requires:
+    - raw_result_schema_pass
+    - runtime_log_exists
+    - bpu_monitor_log_exists
+    - backend_artifact_hash_matches
+    - cpu_fallback_false
+    - frame_trace_valid
+    - output_valid
+    - task_level_quality_evaluated
+  not_verified_when_missing:
+    - runtime_evidence_path
+    - accelerator_evidence_path
+    - model_hash
+    - input_source_manifest
+    - task_level_quality_report

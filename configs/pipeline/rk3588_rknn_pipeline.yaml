@@ -1,0 +1,109 @@
+pipeline_config_id: rk3588_rknn_pipeline_v1
+target: rk3588_8gb
+backend_runtime: rknn
+pipeline_mode: backend_pipeline
+status: ready_for_board_run_after_hash_recheck
+
+input:
+  stream_config: projects/03_video_pipeline/configs/streams/video_fixed_v1.yaml
+  default_input_source_id: video_set_runtime_v1
+  fallback_input_source_id: video_set_stability_v1
+  pace_video_file: true
+  realtime_sources:
+    - astra_s_openni_001
+    - usb_camera_001
+    - rtsp_stream_001
+
+model:
+  model_config: projects/03_video_pipeline/configs/models/yolo11n.yaml
+  board_config: projects/03_video_pipeline/configs/boards/rk3588_8gb.yaml
+  backend_artifact_path: models/yolo11n/rknn/yolo11n_640_rk3588_rknnopt_int8_ptq_calib500.rknn
+  backend_artifact_sha256: 40bce507d584498825267287cbb44c8dd860c8ddc3413677767891aeb225b69c
+  precision_or_quantization: int8_ptq
+
+threads:
+  mode: multithread
+  stages:
+    - capture
+    - preprocess
+    - inference
+    - postprocess
+    - output
+  capture_threads: 1
+  preprocess_threads: 1
+  inference_threads: 3
+  postprocess_threads: 1
+  output_threads: 1
+  thread_affinity: not_pinned
+
+queues:
+  capture_to_preprocess:
+    capacity: 8
+    full_policy: drop_oldest
+  preprocess_to_infer:
+    capacity: 8
+    full_policy: block_with_timeout
+    timeout_ms: 20
+  infer_to_postprocess:
+    capacity: 8
+    full_policy: block_with_timeout
+    timeout_ms: 20
+  postprocess_to_output:
+    capacity: 8
+    full_policy: drop_oldest
+  mainline_policy: drop_oldest
+  queue_capacity: 8
+  queue_push_timeout_ms: 20
+
+buffers:
+  reuse: true
+  pool_size: 8
+  rknn_input_buffer_reuse: true
+  output_buffer_release_required: true
+
+output:
+  display: false
+  save_video: false
+  save_json: true
+  render_boxes: true
+  output_sample_dir: projects/03_video_pipeline/runs/<run_id>/outputs
+
+logging:
+  raw_schema: benchmark/schemas/video_pipeline_raw_schema.yaml
+  raw_result_path: benchmark/raw/03_video_pipeline/rk3588_8gb/<run_id>.jsonl
+  runtime_log_path: logs/runtime/03_video_pipeline/rk3588_8gb/<run_id>.log
+  monitor_log_path: logs/monitor/03_video_pipeline/rk3588_8gb/<run_id>_rknpu.log
+  failure_log_path: logs/failures/03_video_pipeline/rk3588_8gb/<run_id>.jsonl
+  per_frame_trace: true
+  runtime_evidence_required: true
+  accelerator_evidence_required: true
+
+benchmark:
+  warmup_frames: 30
+  smoke_duration_sec: 600
+  short_sustained_duration_sec: 1800
+  acceptance_sustained_duration_sec: 7200
+  batch: 1
+  concurrency: 3
+
+quality_alignment:
+  fixed_input_alignment_status: superseded_by_bdd100k_labeled_video_quality
+  task_level_quality_status: artifact_coco2017_pass_bdd100k_labeled_video_pending
+  quality_alignment_exemption_allowed_for_queue_only_change: true
+
+status_rules:
+  pass_requires:
+    - raw_result_schema_pass
+    - runtime_log_exists
+    - rknpu_monitor_log_exists
+    - backend_artifact_hash_matches
+    - cpu_fallback_false
+    - frame_trace_valid
+    - output_valid
+    - task_level_quality_evaluated
+  not_verified_when_missing:
+    - runtime_evidence_path
+    - accelerator_evidence_path
+    - model_hash
+    - input_source_manifest
+    - task_level_quality_report

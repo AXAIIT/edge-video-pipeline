@@ -1,0 +1,107 @@
+dataset_id: bdd100k_mot_mini_v1
+schema_version: 1
+path_root: repo_root
+status: ready
+role: labeled_video_quality
+storage_budget_gb: 5
+
+source:
+  name: Kaggle BDD100K tracking subset
+  homepage: http://kaggle.com/datasets/robikscube/driving-video-with-object-tracking?resource=download
+  license_status: user_managed_kaggle_download
+  raw_video_or_frame_root: data/raw/bdd100k_mot_kaggle/archive/
+  prepared_video_root: data/videos/bdd100k_mot_mini_v1/
+  prepared_label_root: data/validation/bdd100k_mot_mini_v1/labels/
+  manifest_path: data/validation/bdd100k_mot_mini_v1/bdd100k_mot_mini_v1_manifest.json
+  selection_report_path: data/validation/bdd100k_mot_mini_v1/selection_report.md
+
+selection_policy:
+  split: kaggle_train_subset
+  selected_sequences: 80
+  max_total_prepared_size_gb: 5
+  prepared_video_size_gb: 1.499
+  source_frame_stride: 6
+  labeled_frame_rate: 5.0
+  source_video_fps: about_30
+  target_video_codec: source_mov
+  target_video_container: mov
+  coverage_requirements:
+    time_of_day:
+      daytime_min: 12
+      night_min: 8
+      dawn_or_dusk_min: 2
+    weather:
+      clear_min: 12
+      overcast_min: 6
+      rainy_or_snowy_min: 4
+    scene:
+      city_street_min: 12
+      residential_min: 4
+      highway_min: 4
+    object_density:
+      sparse_min: 8
+      medium_min: 12
+      dense_min: 8
+    class_coverage:
+      pedestrian_min_boxes: 500
+      car_min_boxes: 2000
+      bus_min_boxes: 50
+      truck_min_boxes: 100
+      bicycle_min_boxes: 50
+      motorcycle_min_boxes: 50
+
+class_mapping:
+  pedestrian:
+    coco_class_id: 0
+    coco_name: person
+    include_in_main_eval: true
+  rider:
+    coco_class_id: 0
+    coco_name: person
+    include_in_main_eval: true
+    note: BDD rider is mapped to COCO person for detector-level evaluation; source category is still recorded.
+  bicycle:
+    coco_class_id: 1
+    coco_name: bicycle
+    include_in_main_eval: true
+  car:
+    coco_class_id: 2
+    coco_name: car
+    include_in_main_eval: true
+  motorcycle:
+    coco_class_id: 3
+    coco_name: motorcycle
+    include_in_main_eval: true
+  bus:
+    coco_class_id: 5
+    coco_name: bus
+    include_in_main_eval: true
+  train:
+    coco_class_id: 6
+    coco_name: train
+    include_in_main_eval: true
+  truck:
+    coco_class_id: 7
+    coco_name: truck
+    include_in_main_eval: true
+
+ignored_categories:
+  - other person
+  - other vehicle
+  - trailer
+
+evaluation:
+  scope: labeled_frames_only
+  metrics:
+    - ap50
+    - precision
+    - recall
+    - f1
+    - mean_matched_iou
+  iou_threshold: 0.50
+  confidence_threshold: 0.25
+  raw_prediction_field: detections
+  frame_alignment: label frameIndex k is evaluated against pipeline frame_id k * 6
+  report_prefix: benchmark/processed/03_video_pipeline/<run_id>_bdd100k_mot_quality
+
+prepared_sequences_manifest: data/validation/bdd100k_mot_mini_v1/bdd100k_mot_mini_v1_manifest.json
